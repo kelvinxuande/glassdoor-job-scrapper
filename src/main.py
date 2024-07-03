@@ -9,11 +9,12 @@ from datetime import datetime
 from time import time
 import csv
 # 3rd-party libraries
+from bs4 import BeautifulSoup as soup
 import enlighten
+from selenium import webdriver
 # custom functions
-from packages.common import requestAndParse
-from packages.page import extract_maximums, extract_listings
-from packages.listing import extract_listing
+from packages.common import checkURL
+from packages.glassdoor import extract_vars, extract_jobs, get_next_page, fetch_next_page
 
 
 class glassdoor_scraper():
@@ -39,58 +40,60 @@ class glassdoor_scraper():
         csv_header = [("companyName", "company_starRating", "company_offeredRole", "company_roleLocation", "listing_jobDesc", "requested_url")]
         self.fileWriter(listOfTuples=csv_header, output_fileName=output_fileName)
 
-        maxJobs, maxPages = extract_maximums(base_url)
-        # print("[INFO] Maximum number of jobs in range: {}, number of pages in range: {}".format(maxJobs, maxPages))
-        if (target_num >= maxJobs):
-            print("[ERROR] Target number larger than maximum number of jobs. Exiting program...\n")
-            os._exit(0)
+        #browser/selenium setup
+        options = webdriver.FirefoxOptions()
+        options.add_argument("-headless")
+        driver = webdriver.Firefox(options=options)
 
-        # initialises enlighten_manager
-        enlighten_manager = enlighten.get_manager()
-        progress_outer = enlighten_manager.counter(total=target_num, desc="Total progress", unit="listings", color="green", leave=False)
+        requested_url = checkURL(base_url)
+        driver.get(requested_url)
+        page_html = driver.page_source
+        page_soup = soup(page_html, "html.parser")
 
-        # initialise variables
-        page_index = 1
-        total_listingCount = 0
+        try:    
+            #extract initial variables and setup to fetch more peges if required
+            job_count, user_agent, version, token, keyword, location_id, original_page_url, parameter_url_input, seo_friendly_url_input, next_page, job_listings = extract_vars(page_soup)
 
-        # initialises prev_url as base_url
-        prev_url = base_url
+            if target_num > job_count:
+                target_num = job_count
 
-        while total_listingCount <= target_num:
-            # clean up buffer
+             # initialises enlighten_manager
+            enlighten_manager = enlighten.get_manager()
+            progress_outer = enlighten_manager.counter(total=target_num, desc="Total progress", unit="jobs", color="green", leave=False)
+
+            # initialise variables
             list_returnedTuple = []
 
-            new_url = self.update_url(prev_url, page_index)
-            page_soup,_ = requestAndParse(new_url)
-            listings_set, jobCount = extract_listings(page_soup)
-            progress_inner = enlighten_manager.counter(total=len(listings_set), desc="Listings scraped from page", unit="listings", color="blue", leave=False)
+            # extracting job details from first page
+            list_returnedTuple = list_returnedTuple + extract_jobs(job_listings)
+            for job_entry in range(len(job_listings)):
+                progress_outer.update()
 
-            print("\n[INFO] Processing page index {}: {}".format(page_index, new_url))
-            print("[INFO] Found {} links in page index {}".format(jobCount, page_index))
+            # load next page if necessary and extract job details
+            if len(list_returnedTuple) < target_num:
+                while len(list_returnedTuple) < min(target_num, job_count):
+                    page_number, page_cursor = next_page
+                    next_page_script = fetch_next_page(user_agent, token, version, keyword, location_id, original_page_url, parameter_url_input, seo_friendly_url_input, page_cursor, page_number)
+                    response = driver.execute_script(next_page_script)
+                    response_jobs = response[0]["data"]["jobListings"]
+                    list_returnedTuple = list_returnedTuple + extract_jobs(response_jobs["jobListings"])
+                    job_count = response_jobs["totalJobsCount"]
+                    next_page = get_next_page(next_page, response_jobs["paginationCursors"])
+                    for job_entry in range(len(response_jobs["jobListings"])):
+                        progress_outer.update()
 
-            for listing_url in listings_set:
-
-                # to implement cache here
-
-                returned_tuple = extract_listing(listing_url)
-                list_returnedTuple.append(returned_tuple)
-                # print(returned_tuple)
-                progress_inner.update()
-
-            progress_inner.close()
-
+            driver.quit()
             self.fileWriter(listOfTuples=list_returnedTuple, output_fileName=output_fileName)
+            print("[INFO] Finished processing; Total number of jobs processed: {}".format(len(list_returnedTuple)))
+            progress_outer.close()
 
-            # done with page, moving onto next page
-            total_listingCount = total_listingCount + jobCount
-            print("[INFO] Finished processing page index {}; Total number of jobs processed: {}".format(page_index, total_listingCount))
-            page_index = page_index + 1
-            prev_url = new_url
-            progress_outer.update(jobCount)
+        except Exception as e:
+            print(f"[ERROR] Closing WebDrive: {e}")
+            driver.quit()
+            progress_outer.close()
 
-        progress_outer.close()    
    
-            # loads user defined parameters
+    # loads user defined parameters
     def load_configs(self, path):
         with open(path) as config_file:
             configurations = json.load(config_file)
@@ -112,18 +115,6 @@ class glassdoor_scraper():
                 except Exception as e:
                     print("[WARN] In filewriter: {}".format(e))
 
-
-    # updates url according to the page_index desired
-    def update_url(self, prev_url, page_index):
-        if page_index == 1:
-            prev_substring = ".htm"
-            new_substring = "_IP" + str(page_index) + ".htm"
-        else:
-            prev_substring = "_IP" + str(page_index - 1) + ".htm"
-            new_substring = "_IP" + str(page_index) + ".htm"
-
-        new_url = prev_url.replace(prev_substring, new_substring)
-        return new_url
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

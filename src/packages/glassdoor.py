@@ -42,7 +42,7 @@ def extract_jobs(json_jobs):
         list_of_tuples.append((company_name, company_star_rating, company_offered_role, company_role_location, listing_job_desc, job_url))
     return list_of_tuples
 
-def next_page(curr_page, new_page_json):
+def get_next_page(curr_page, new_page_json):
     for item in new_page_json:
         if item["pageNumber"] == curr_page[0]+1:
             return [item["pageNumber"], item["cursor"]]
