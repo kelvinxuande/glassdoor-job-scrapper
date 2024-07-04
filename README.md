@@ -1,5 +1,7 @@
 # Glassdoor job scraper
+
 [Updating deprecated project as of 4th July 2024]
+
 This project web scrapes the popular job listing site "Glassdoor" for information from job listings
 * Functions without any authentication e.g. user sign-ins/ API tokens and keys. Users simply modifies a config file to provide: 
    - A 'base url' to scrape from, based on desired job role and country.
