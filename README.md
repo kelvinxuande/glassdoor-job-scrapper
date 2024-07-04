@@ -26,7 +26,7 @@ This project web scrapes the popular job listing site "Glassdoor" for informatio
 
 ## Prerequisites
 
-Refer to requirements.txt for a comprehensive list of requirements.
+Refer to requirements.txt for a comprehensive list of requirements.</br>
 It works with Firefox Selenium Webdrive, it MIGHT not work if Firefox browser is not installed.
 
 ## Usage
