@@ -5,8 +5,25 @@ import json
 # 3rd-party libraries
 from bs4 import BeautifulSoup as soup
 
-
+# extracts initial variables from initial GET request. Some are used for future POST request.
 def extract_vars(page_soup):
+    '''
+    [arg]
+    page_soup: (BeautifulSoup object) provide a BeautifulSoup html.parsed object
+
+    [return output]
+    job_count: (int) extract total jobs number from the initial GET request
+    user_agent: (str) extract user agent used by the initial GET request
+    version: (str) extract version used by the initial GET request
+    token: (str) extract token used by the initial GET request
+    keyword: (str) extract keyword used by the initial GET request
+    location_id: (int) extract locationId (if) used by the initial GET request
+    original_page_url: (str) extract original_page_url used by the initial GET request
+    parameter_url_input: (str) extract parameter_url_input used by the initial GET request
+    seo_friendly_url_input: (str) extract seo_friendly_url_input used by the initial GET request
+    next_page: (list) extract the next page details [(int), (str)] this is used to fetch/request the next set of Jobs.
+    job_listings: (json/dict) extract the list of jobs and corresponding details obtained by the initial GET request
+    '''
     script_section = page_soup.find("script", id="__NEXT_DATA__").getText()
     script_json = json.loads(script_section)
     job_count = script_json["props"]["pageProps"]["jobSearchPage"]["searchResultsData"]["jobListings"]["totalJobsCount"]
@@ -28,27 +45,71 @@ def extract_vars(page_soup):
     job_listings = script_json["props"]["pageProps"]["jobSearchPage"]["searchResultsData"]["jobListings"]["jobListings"]
     return job_count, user_agent, version, token, keyword, location_id, original_page_url, parameter_url_input, seo_friendly_url_input, next_page, job_listings
 
+# function to unpack job listings and extract info (name, star rating, role, location, job desc, url) from each listing.
 def extract_jobs(json_jobs):
     list_of_tuples = []
     for job in json_jobs:
         company_name = job["jobview"]["header"]["employer"]["name"]
         if type(company_name) == type(None):
             company_name = "Non-Disclosed"
+            
         company_star_rating = job["jobview"]["header"]["rating"]
+        if type(company_star_rating) == type(None):
+            company_star_rating = 0
+            
         company_offered_role = job["jobview"]["header"]["jobTitleText"]
+        if type(company_offered_role) == type(None):
+            company_offered_role = "NA"
+        
         company_role_location = job["jobview"]["header"]["locationName"]
+        if type(company_role_location) == type(None):
+            company_role_location = "NA"
+        
         listing_job_desc = job["jobview"]["job"]["descriptionFragmentsText"]
+        if type(listing_job_desc) == type(None):
+            listing_job_desc = "NA"
+        
         job_url = job["jobview"]["header"]["seoJobLink"]
+        if type(job_url) == type(None):
+            job_url = "NA"
+            
         list_of_tuples.append((company_name, company_star_rating, company_offered_role, company_role_location, listing_job_desc, job_url))
+        
     return list_of_tuples
 
+# function to obtain the next page number and cursor, if page does not exist return current page detail
 def get_next_page(curr_page, new_page_json):
+    '''
+    [args]
+    curr_page: (list) it includes the current page details [(int), (str)]
+    new_page_json: (json) json object that includes pagination details
+
+    [return output]
+    [(int), (str)]: (list) details for the next page following the curr_page provided. If NOT present return curr_page.
+    '''
     for item in new_page_json:
         if item["pageNumber"] == curr_page[0]+1:
             return [item["pageNumber"], item["cursor"]]
     return curr_page
 
-def fetch_next_page(user_agent, token, version, keyword, location_id, original_page_url, parameter_url_input, seo_friendly_url_input, page_cursor, page_number):
+# function to build a JavaScript string that can be used to make a POST request and obtain job listing
+def fetch_next_page(user_agent, token, version, keyword, location_id, original_page_url, parameter_url_input, seo_friendly_url_input, page_cursor,  page_number):
+    '''
+    [args]
+    user_agent: (str) obtained from extract_vars() function
+    token: (str) obtained from extract_vars() function
+    version: (str) obtained from extract_vars() function
+    keyword: (str) obtained from extract_vars() function
+    location_id: (int) obtained from extract_vars() function
+    original_page_url: (str)  from extract_vars() function
+    parameter_url_input: (str) obtained from extract_vars() function
+    seo_friendly_url_input: (str) obtained from extract_vars() function
+    page_cursor: (str) obtained from extract_vars() next_page[1] or get_next_page() function
+    page_number: (int) obtained from extract_vars() next_page[0] or get_next_page() function
+
+    [return output]
+    script: (str) JavaScript to run browser control to fetch POST request data, return data is json/dict object. It can be unpacked by extract_jobs() function
+    '''
     headers = {
     "User-Agent": user_agent,
     "Accept": "*/*",

@@ -42,12 +42,7 @@ class glassdoor_scraper():
 
         #browser/selenium setup
         options = webdriver.FirefoxOptions()
-        options.add_argument("--devtools")
-        profile = webdriver.FirefoxProfile()
-        profile.set_preference("devtools.toolbox.selectedTool", "netmonitor")
-        profile.update_preferences()
-        options.profile = profile
-        #options.add_argument("-headless")
+        options.add_argument("-headless")
         driver = webdriver.Firefox(options=options)
 
         requested_url = checkURL(base_url)
@@ -74,7 +69,7 @@ class glassdoor_scraper():
             for job_entry in range(len(job_listings)):
                 progress_outer.update()
 
-            # load next page if necessary and extract job details
+            # load next page if necessary and extract job details, max page = 30.
             if len(list_returnedTuple) < target_num:
                 while len(list_returnedTuple) < min(target_num, job_count) and next_page[0]<=30:
                     page_number, page_cursor = next_page
