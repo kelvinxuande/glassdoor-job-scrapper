@@ -1,14 +1,15 @@
-# [DEPRECATED] Glassdoor job scraper
+# Glassdoor job scraper
 This project web scrapes the popular job listing site "Glassdoor" for information from job listings
 * Functions without any authentication e.g. user sign-ins/ API tokens and keys. Users simply modifies a config file to provide: 
    - A 'base url' to scrape from, based on desired job role and country.
-   - A 'target job size' i.e. number of individual job listings to scrape from.
+   - A 'target job size' i.e. number of individual job listings to scrape from. [NOTE: Glassdoor will only show 900 jobs max (i.e. 30 jobs * 30 pages)]
 * Script scrapes:
    - Job link, role, company and job description from glassdoor job listing results. 
 * Information collected are accessible to users in the form of an output csv.
 * Script has been tested and verified to be working as expected for a job with: 
-   - A target job size of < 2000 individual listings, 
-   - Multiple pages > 10 pages of job listing links.
+   - A target job size of <= 900 individual listings, 
+   - Pages are not directly availables in the new version, but are used in the background, max of 30 pages,
+   - With Firefox Selenium Webdrive.
 
 ## Extracted data
 ![](https://github.com/kelvinxuande/glassdoor-scraper/blob/master/docs/def-3.jpg)
@@ -40,4 +41,8 @@ The following gif shows how a base_url can be obtained:
 
 ## Future work
 
-There are plans to create a data processing pipeline to analyse and visualise to generate useful insights from extracted data in the future. Feel free to collaborate and contribute to this project, or open an issue to suggest more useful features for implementation.
+- Job Desciption is only a short snippet, next feature is to obtain full Job Description.
+- Using Localised Version of Glassdoor website (.co.uk), next feature is to make it more dynamic.
+- Next data point to scrape are Reviews.
+- Refactor codebase using Requests library instead of Selenium to see if cloudfare checks can be bypassed.
+    
