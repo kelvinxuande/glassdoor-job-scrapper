@@ -56,7 +56,9 @@ def extract_jobs(json_jobs):
         if type(company_name) == type(None):
             company_name = job["jobview"]["header"]["employer"]["shortName"]
             if type(company_name) == type(None):
-                company_name = "Non-Disclosed"
+                company_name = job["jobview"]["header"]["employerNameFromSearch"]
+                if type(company_name) == type(None):
+                    company_name = "Non-Disclosed"
             
         company_star_rating = job["jobview"]["header"]["rating"]
         if type(company_star_rating) == type(None):
