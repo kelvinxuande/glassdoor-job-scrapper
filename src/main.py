@@ -52,7 +52,7 @@ class glassdoor_scraper():
 
         try:    
             #extract initial variables and setup to fetch more peges if required
-            job_count, user_agent, version, token, keyword, location_id, original_page_url, parameter_url_input, seo_friendly_url_input, next_page, job_listings = extract_vars(page_soup)
+            job_count, domain, user_agent, version, token, keyword, location_id, original_page_url, parameter_url_input, seo_friendly_url_input, next_page, job_listings = extract_vars(page_soup)
 
             if target_num > job_count:
                 target_num = job_count
@@ -73,7 +73,7 @@ class glassdoor_scraper():
             if len(list_returnedTuple) < target_num:
                 while len(list_returnedTuple) < min(target_num, job_count) and next_page[0]<=30:
                     page_number, page_cursor = next_page
-                    next_page_script = fetch_next_page(user_agent, token, version, keyword, location_id, original_page_url, parameter_url_input, seo_friendly_url_input, page_cursor, page_number)
+                    next_page_script = fetch_next_page(domain, user_agent, token, version, keyword, location_id, original_page_url, parameter_url_input, seo_friendly_url_input, page_cursor, page_number)
                     response = driver.execute_script(next_page_script)
                     response_jobs = response[0]["data"]["jobListings"]
                     list_returnedTuple = list_returnedTuple + extract_jobs(response_jobs["jobListings"])
