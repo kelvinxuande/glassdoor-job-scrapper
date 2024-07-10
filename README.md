@@ -1,6 +1,7 @@
 # Glassdoor job scraper
 
-[Updating deprecated project as of 4th July 2024]
+
+[Update as of 10-July-2024]
 
 This project web scrapes the popular job listing site "Glassdoor" for information from job listings
 * Functions without any authentication e.g. user sign-ins/ API tokens and keys. Users simply modifies a config file to provide: 
@@ -47,8 +48,7 @@ The following gif shows how a base_url can be obtained:
 
 There are plans to create a data processing pipeline to analyse and visualise to generate useful insights from extracted data in the future. Feel free to collaborate and contribute to this project, or open an issue to suggest more useful features for implementation.
 
-[Next to do 04/07/2024]
-- Currently using Localised Version of Glassdoor website (.co.uk), next feature is to make it more dynamic.
+[Future Features]
 - Job Desciption is only a short snippet, next feature is to obtain full Job Description.
 - Next data point to scrape - Reviews.
 - Refactor codebase using Requests library instead of Selenium.
