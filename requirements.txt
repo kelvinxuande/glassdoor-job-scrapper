@@ -4,3 +4,4 @@ jsonschema
 requests
 urllib3
 enlighten
+selenium
